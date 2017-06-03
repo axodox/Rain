@@ -6,7 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 
-namespace Rain.Test
+namespace Rain
 {
   class Program
   {
@@ -39,9 +39,9 @@ namespace Rain.Test
         Console.WriteLine(
           "Tool for monitoring .Net processes for exceptions and log.\r\n" +
           "Usage examples:\r\n" +
-          "Rain.Test.exe MyFavoriteProcess\r\n" +
-          "Rain.Test.exe MyFavoriteProcess,MyOtherFavoriteProcess\r\n" +
-          "Rain.Test.exe MyFavoriteProcess someLogFile.log\r\n" +
+          "Rain.exe MyFavoriteProcess\r\n" +
+          "Rain.exe MyFavoriteProcess,MyOtherFavoriteProcess\r\n" +
+          "Rain.exe MyFavoriteProcess someLogFile.log\r\n" +
           "\r\n" +
           "Further options:\r\n" +
           "-ft:exception|log\r\n" +

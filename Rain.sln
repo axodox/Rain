@@ -18,7 +18,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Rain.Injector.x64", "Rain.I
 		{73515976-A86E-461D-897B-7E5C844E79F7} = {73515976-A86E-461D-897B-7E5C844E79F7}
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rain.Test", "Rain.Test\Rain.Test.csproj", "{7DC92BD8-B0D7-48D1-8DB2-D4382702904F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rain", "Rain\Rain.csproj", "{7DC92BD8-B0D7-48D1-8DB2-D4382702904F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rain.Server", "Rain.Server\Rain.Server.csproj", "{55E543FB-DBCC-4143-BDFE-93C9B611A864}"
 	ProjectSection(ProjectDependencies) = postProject
