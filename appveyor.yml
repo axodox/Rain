@@ -1,0 +1,18 @@
+version: 1.0.{build}
+skip_tags: true
+image: Visual Studio 2017
+configuration: Release
+before_build:
+- cmd: nuget restore
+build:
+  verbosity: minimal
+after_build:
+- cmd: 7z a Rain.zip %APPVEYOR_BUILD_FOLDER%\Release\*.dll %APPVEYOR_BUILD_FOLDER%\Release\*.exe %APPVEYOR_BUILD_FOLDER%\Release\*.config
+artifacts:
+- path: Rain.zip
+  name: Rain
+deploy:
+- provider: GitHub
+  auth_token:
+    secure: 2KYlhjNwJHD3tUy4wW4QFsInFF3eo2zIEwNPHLZhfsYebvmxlLQKUmd7YfNk4kf9
+  artifact: Rain
