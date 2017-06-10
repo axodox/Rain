@@ -1,9 +1,15 @@
+using Rain.Core;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Reflection;
 using System.Runtime.ExceptionServices;
 using System.ServiceModel;
 using System.ServiceModel.Activation;
+using System.Text.RegularExpressions;
 using System.Threading;
 
 namespace Rain.Client
@@ -25,18 +31,93 @@ namespace Rain.Client
     private Process _process = Process.GetCurrentProcess();
     private static readonly int _processId = Process.GetCurrentProcess().Id;
     private static readonly string _processName = Process.GetCurrentProcess().ProcessName;
+    private IDictionary<string, string> _settings;
+
+    private static List<IRainPlugIn> PlugIns = new List<IRainPlugIn>();
 
     public DebugService()
     {
+      _settings = ReadSettings();
+      LoadPlugIns();
+
       _entriesToSend = new BlockingCollection<Entry>();
       var _sendThread = new Thread(SendWorker);
       _sendThread.IsBackground = true;
       _sendThread.Start();
     }
 
+    private void LoadPlugIns()
+    {
+      var clientRoot = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+      foreach (var setting in _settings.Where(p=>p.Key.StartsWith("Modules.")))
+      {
+        try
+        {
+          var libraryPath = setting.Value;
+          if (!Path.IsPathRooted(libraryPath))
+          {
+            libraryPath = Path.Combine(clientRoot, libraryPath);
+          }
+
+          if (File.Exists(libraryPath))
+          {
+            var assemblyName = AssemblyName.GetAssemblyName(libraryPath);
+            var assembly = Assembly.Load(assemblyName);
+            var exportedPlugIns = assembly
+              .GetExportedTypes()
+              .Where(p => p.GetInterface(typeof(IRainPlugIn).FullName) != null)
+              .ToArray();
+
+            foreach(var exportedPlugIn in exportedPlugIns)
+            {
+              var plugIn = Activator.CreateInstance(exportedPlugIn) as IRainPlugIn;
+              plugIn.OnAttach();
+              PlugIns.Add(plugIn);
+            }
+          }
+        }
+        catch(Exception e)
+        {
+          Console.WriteLine($"Could not load module library {setting.Value}!");
+        }
+      }
+    }
+
+    private static IDictionary<string, string> ReadSettings()
+    {
+      var settings = new Dictionary<string, string>();
+
+      var clientRoot = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+      var configPath = Path.Combine(clientRoot, "Rain.ini");
+      if (File.Exists(configPath))
+      {
+        var chapterRegex = new Regex(@"^\[(\w+)\]$");
+        var keyValueRegex = new Regex(@"^(\w+)=(.*)$");
+
+        var chapter = string.Empty;
+        var lines = File.ReadAllLines(configPath);
+        foreach (var line in lines)
+        {
+          var chapterMatch = chapterRegex.Match(line);
+          if (chapterMatch.Success)
+          {
+            chapter = chapterMatch.Groups[1].Value;
+          }
+
+          var keyValueMatch = keyValueRegex.Match(line);
+          if (keyValueMatch.Success)
+          {
+            settings[chapter + "." + keyValueMatch.Groups[1].Value] = keyValueMatch.Groups[2].Value;
+          }
+        }
+      }
+
+      return settings;
+    }
+
     private void SendWorker()
     {
-      while(true)
+      while (true)
       {
         try
         {
@@ -44,7 +125,7 @@ namespace Rain.Client
           item.ProcessId = _processId;
           item.ProcessName = _processName;
 
-          switch(item)
+          switch (item)
           {
             case LogEntry logEntry:
               _monitor.AddLogEntry(logEntry);
@@ -60,7 +141,7 @@ namespace Rain.Client
         }
       }
     }
-    
+
     private ExceptionEntry GetExceptionEntry(Exception exception)
     {
       if (exception == null) return null;
@@ -143,6 +224,12 @@ namespace Rain.Client
       AppDomain.CurrentDomain.UnhandledException -= OnUnhandledException;
       _monitor = null;
       _entriesToSend.CompleteAdding();
+
+      foreach (var plugIn in PlugIns.ToArray())
+      {
+        plugIn.OnDetach();
+        PlugIns.Remove(plugIn);
+      }
     }
 
     private void DisableLogging()
