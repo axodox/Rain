@@ -17,6 +17,7 @@ namespace Rain.Client
       foreach (Hierarchy hierarchy in LogManager.GetAllRepositories())
       {
         hierarchy.Root.AddAppender(new DebugAppender());
+        hierarchy.RaiseConfigurationChanged(EventArgs.Empty);
         hierarchy.Configured = true;
       }
     }
